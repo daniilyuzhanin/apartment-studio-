@@ -1,11 +1,19 @@
-import {parseState,serializeState,palettes} from './layout.js';
+import {parseState,serializeState,palettes,proposals} from './layout.js';
 let state=parseState(location.hash),model;
 const $=s=>document.querySelector(s);
-const concepts={
- original:{tag:'ИСХОДНАЯ СХЕМА',title:'Отправная точка',description:'Три отдельные комнаты и кухня 16,91 м². Сравните исходную оболочку с двумя вариантами объединения.',area:'16,91 м²',caption:'отдельная кухня по плану',note:'Исходная схема. Мебель добавлена условно для масштаба.'},
- table:{tag:'ВАРИАНТ 01',title:'Собираться вместе',description:'Объединяем кухню с соседней комнатой. Большой стол у окна, диван в отдельной зоне и кухня на привычном месте.',area:'28,16 м²',caption:'16,91 + 11,25 м² по плану',note:'Условно убираем перегородку между кухней и соседней комнатой.'},
- master:{tag:'ВАРИАНТ 02',title:'Своя территория',description:'Спальня и соседняя комната становятся приватным блоком с гардеробной и проходом в ванную. Кухня 16,91 м² и гостиная 11,25 м² остаются отдельными.',area:'23,72 м²',caption:'спальня + гардеробная · без тамбура и ванной',note:'Вход → приватный тамбур → спальня / гардеробная / ванная. Кухня остаётся отдельной.'}
-};
+const concepts={original:{tag:'БАЗОВАЯ СХЕМА',title:'Три комнаты и кухня',description:'Базовая конфигурация комнат для сравнения. Тёплая лоджия, телевизоры и исправления входной зоны применены и здесь.',area:'16,91 м²',caption:'кухня по исходному плану',note:'Это база с общей доработкой входа и тёплой лоджией. Оригинальный PDF доступен ниже.'}};
+for(const [id,c] of Object.entries(proposals))concepts[id]={...c,tag:'ВАРИАНТ '+c.number};
+const variants=document.querySelector('.variants');
+variants.innerHTML='<button class="variant" data-variant="original" aria-pressed="false"><span class="variant-number">00</span><span><b>Базовая схема</b><small>3 комнаты + тёплая лоджия</small></span><span class="radio"></span></button>';
+for(const [id,c] of Object.entries(proposals)){
+ const button=document.createElement('button');button.className='variant';button.dataset.variant=id;button.setAttribute('aria-pressed','false');
+ button.innerHTML=`<span class="variant-number">${c.number}</span><span><b>${c.label}</b><small>${c.subtitle}</small></span><span class="radio"></span>`;variants.append(button);
+}
+const comparison=document.querySelector('#comparison-body');
+for(const [id,c] of Object.entries(proposals)){
+ const row=document.createElement('tr');
+ row.innerHTML=`<th scope="row"><button data-variant="${id}">${c.number} · ${c.label}</button></th>${c.scores.map(n=>`<td>${n}/5</td>`).join('')}<td>${c.plus}<small>${c.minus}</small></td>`;comparison.append(row);
+}
 function toast(text){$('#toast').textContent=text;$('#toast').classList.add('visible');clearTimeout(toast.timer);toast.timer=setTimeout(()=>$('#toast').classList.remove('visible'),3600);}
 function updateUI(){for(const key of ['variant','palette','view'])document.querySelectorAll(`[data-${key}]`).forEach(el=>{const active=el.dataset[key]===state[key];el.classList.toggle('active',active);el.setAttribute('aria-pressed',String(active));});const c=concepts[state.variant];for(const [id,key] of [['variant-tag','tag'],['variant-title','title'],['variant-description','description'],['kitchen-area','area'],['area-caption','caption'],['model-note','note']])$('#'+id).textContent=c[key];$('#palette-name').textContent=palettes[state.palette].name;$('#furniture').checked=state.furniture;$('#full-walls').checked=state.walls==='full';history.replaceState(null,'',serializeState(state));}
 function setState(patch){const prev=state;state={...state,...patch};updateUI();if(model){if(prev.variant!==state.variant||prev.palette!==state.palette||prev.walls!==state.walls||prev.furniture!==state.furniture)model.rebuild(state);if(prev.view!==state.view)model.setView(state.view);}}
