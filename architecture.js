@@ -62,7 +62,8 @@ export function getArchitecture(layout){
  const hallFurniture=[{id:'reference-bench',x:10.51,z:5.955,w:.80,d:.45,h:.42}];
  const toilets=[{id:'bath-wc',x:5.96,z:5.97,rotation:-Math.PI/2},{id:'shower-wc',x:12.41,z:5.73,rotation:Math.PI}];
  const showerFixtures=[
-  {id:'cabinet',x:11.885,z:4.25,w:1.670,d:.700,h:2.25},
+  // Revision 03: the full cabinet, including fronts, ends at the shaft face.
+  {id:'cabinet',x:11.885,z:4.1515,w:1.670,d:.503,h:2.65},
   {id:'vanity',x:11.475,z:5.93,w:.850,d:.500,h:.82},
   {id:'shower-tray',x:13.47,z:5.1915,w:1.100,d:1.577,h:.04},
   {id:'installation',x:13.045,z:6.08,w:1.950,d:.200,h:1.15}

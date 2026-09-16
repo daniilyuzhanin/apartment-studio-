@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import {OrbitControls} from './vendor/OrbitControls.js';
 import {getLayout,palettes,proposals} from './layout.js?v=4';
-import {getArchitecture} from './architecture.js?v=4';
+import {getArchitecture} from './architecture.js?v=6';
 
 export function createApartment(container,onRoom){
  const scene=new THREE.Scene();
@@ -96,7 +96,7 @@ export function createApartment(container,onRoom){
     box(.025,1.85,.67,12.93,.06,4.738,material('#cae0d7',{transparent:true,opacity:.23,roughness:.12,depthWrite:false}));
     line([12.93,.05,4.403],[12.93,1.94,4.403],'#67756d');
     cyl(.055,.012,13.50,.073,5.25,'#5b6c64');
-    box(.028,1.45,.028,13.975,.60,4.92,'#77867d');const head=cyl(.13,.035,13.86,2.02,4.92,'#89978e');head.rotation.z=.12;
+    box(.028,1.45,.028,13.99,.60,5.20,'#77867d');const head=cyl(.13,.035,13.66,2.12,5.20,'#89978e');head.rotation.z=.12;
    }else box(f.w,f.h,f.d,f.x,.025,f.z,palette.tile);
   }
   for(let i=0;i<4;i++)box(.30,.035,.43,13.84,.5+i*.44,4.14,palette.wood);
