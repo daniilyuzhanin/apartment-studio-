@@ -1,6 +1,6 @@
 import * as T from 'three';
 import {OrbitControls} from './vendor/OrbitControls.js';
-import {room,fixtures,shaft,toilet,door,niche,showerSystem,lights,scenarios,designs} from './bathroom-data.js?v=3';
+import {room,fixtures,shaft,toilet,door,niche,showerSystem,lights,scenarios,designs,arrangements} from './bathroom-data.js?v=4';
 
 // All finishes and exported images use this same measurable geometry.
 export function createBathroom(container){
@@ -12,7 +12,7 @@ export function createBathroom(container){
  const camera=new T.PerspectiveCamera(43,1,.02,60),planCamera=new T.OrthographicCamera(-3,3,3,-3,.02,60);
  planCamera.position.set(1.065,9,1.14);planCamera.up.set(0,0,-1);planCamera.lookAt(1.065,0,1.14);
  const controls=new OrbitControls(camera,renderer.domElement);controls.enableDamping=true;controls.minDistance=.3;controls.maxDistance=11;controls.maxPolarAngle=Math.PI*.495;
- const root=new T.Group();scene.add(root);let activeView='iso',activeDesign='',currentLight='day';
+ const root=new T.Group();scene.add(root);let activeView='iso',activeDesign='',activeArrangement='protected',currentLight='day';
  const mat=(c,p={})=>new T.MeshStandardMaterial({color:c,roughness:.7,...p});
  function mesh(g,m,parent=root){const o=new T.Mesh(g,m);o.castShadow=true;o.receiveShadow=true;parent.add(o);return o;}
  function box(w,h,d,x,y,z,m,parent=root){const o=mesh(new T.BoxGeometry(w,h,d),typeof m==='string'?mat(m):m,parent);o.position.set(x,y+h/2,z);return o;}
@@ -57,6 +57,12 @@ export function createBathroom(container){
  const mirror=mesh(new T.CircleGeometry(.386,80),mat('#dbe0dc',{roughness:.025,metalness:1}),mirrorGroup);mirror.rotation.y=Math.PI;mirror.position.set(v.x,1.63,2.239);
  const cubeTarget=new T.WebGLCubeRenderTarget(256),cubeCamera=new T.CubeCamera(.05,20,cubeTarget);cubeCamera.position.set(v.x,1.63,2.18);scene.add(cubeCamera);mirror.material.envMap=cubeTarget.texture;mirror.material.envMapIntensity=1;
  const install=fixtures.find(f=>f.id==='installation');box(install.w,1.15,install.d,install.x,0,install.z,stone);box(install.w,.018,install.d,install.x,1.15,install.z,stone);
+ const joinery=new T.Group(),showerWall=new T.Group();root.add(joinery,showerWall);
+ // Join the vanity and WC casing without moving the basin or reducing the doorway.
+ box(.170,1.150,.200,.935,0,2.180,stone,joinery);
+ box(1.020,.018,.200,.510,1.150,2.180,stone,joinery);
+ box(1.100,1.500,.200,2.420,1.150,2.180,stone,showerWall);box(1.100,2.650,.008,2.420,0,2.075,eastMaterial,showerWall);
+ const southTileJoints=new T.Group();showerWall.add(southTileJoints);for(let x=1.97;x<2.97;x+=.10)box(.002,2.65,.001,x,0,2.070,joints,southTileJoints);for(let y=.30;y<2.65;y+=.30)box(1.1,.002,.001,2.42,y,2.070,joints,southTileJoints);
  const wc=toilet,wcProfile=[[0,0],[.105,0],[.17,.12],[.18,.25],[.153,.26],[.142,.16],[.07,.08],[0,.08]].map(p=>new T.Vector2(...p));
  const wcBody=mesh(new T.LatheGeometry(wcProfile,64),ceramic);wcBody.scale.z=1.45;wcBody.position.set(wc.x,.18,wc.z);const seat=mesh(new T.TorusGeometry(.168,.017,16,72),ceramic);seat.rotation.x=Math.PI/2;seat.scale.y=1.47;seat.position.set(wc.x,.46,wc.z);
  rounded(.31,.055,.15,wc.x,.426,wc.z+.19,ceramic,.035);box(.23,.14,.015,wc.x,.85,2.07,metal);
@@ -64,10 +70,11 @@ export function createBathroom(container){
  const shower=fixtures.find(f=>f.id==='shower-tray');box(shower.w,.015,shower.d,shower.x,.001,shower.z,floor);box(.73,.003,.035,2.44,.018,1.99,metal);for(let i=0;i<22;i++)box(.002,.002,.025,2.10+i*.032,.021,1.99,dark);
  const glassGroup=new T.Group();root.add(glassGroup);const panel=box(.008,2.12,.8,1.874,.02,.903,glass,glassGroup);panel.castShadow=false;
  for(const z of [.503,1.303])box(.009,2.14,.009,1.874,0,z,metal,glassGroup);box(.009,.009,.80,1.874,2.14,.903,metal,glassGroup);
+ const showerPivot=new T.Group(),showerGroup=new T.Group();root.add(showerPivot);showerPivot.add(showerGroup);showerGroup.position.set(-showerSystem.x,0,-showerSystem.z);
  const sh=showerSystem; // System is mounted on the east/right wall, not on the shaft.
- tube([[sh.x,sh.mixerHeight,sh.z],[sh.x,sh.headHeight,sh.z],[sh.headX,sh.headHeight,sh.z]],.012,metal);
- cyl(.112,.015,sh.headX,sh.headHeight-.025,sh.z,metal);for(let x=-2;x<=2;x++)for(let z=-2;z<=2;z++)if(x*x+z*z<7)cyl(.0025,.002,sh.headX+x*.033,sh.headHeight-.028,sh.z+z*.033,dark);
- box(.046,.05,.24,sh.x-.015,sh.mixerHeight,sh.z,metal);tube([[sh.x,1.12,sh.z+.09],[sh.x-.07,.65,sh.z+.14],[sh.x-.06,.68,sh.z+.30],[sh.x,1.43,sh.z+.24]],.006,metal);tube([[sh.x,1.41,sh.z+.24],[sh.x-.025,1.59,sh.z+.24]],.016,metal);
+ tube([[sh.x,sh.mixerHeight,sh.z],[sh.x,sh.headHeight,sh.z],[sh.headX,sh.headHeight,sh.z]],.012,metal,showerGroup);
+ cyl(.112,.015,sh.headX,sh.headHeight-.025,sh.z,metal,showerGroup);for(let x=-2;x<=2;x++)for(let z=-2;z<=2;z++)if(x*x+z*z<7)cyl(.0025,.002,sh.headX+x*.033,sh.headHeight-.028,sh.z+z*.033,dark,showerGroup);
+ box(.046,.05,.24,sh.x-.015,sh.mixerHeight,sh.z,metal,showerGroup);tube([[sh.x,1.12,sh.z+.09],[sh.x-.07,.65,sh.z+.14],[sh.x-.06,.68,sh.z+.30],[sh.x,1.43,sh.z+.24]],.006,metal,showerGroup);tube([[sh.x,1.41,sh.z+.24],[sh.x-.025,1.59,sh.z+.24]],.016,metal,showerGroup);
  const doorGroup=new T.Group();doorGroup.position.set(-.035,0,door.hingeZ);doorGroup.rotation.y=Math.PI/2;root.add(doorGroup);box(.035,2.10,.8,0,0,-.4,facade,doorGroup);box(.04,.018,.115,.024,1.0,-.68,metal,doorGroup);
  box(.80,.4,.45,-.54,0,2.055,wood);const ceiling=box(2.97,.07,2.28,1.485,2.65,1.14,mat('#eeece5'));
  const emitters=[],ceilingFixtures=new T.Group();root.add(ceilingFixtures);
@@ -80,17 +87,19 @@ export function createBathroom(container){
  const ambient=new T.HemisphereLight('#fff8ec','#b4aa97',1);scene.add(ambient);const sun=new T.DirectionalLight('#fff8ec',1.2);sun.position.set(1.3,6,4);sun.castShadow=true;sun.shadow.mapSize.set(2048,2048);Object.assign(sun.shadow.camera,{left:-4,right:4,top:4,bottom:-4});sun.shadow.normalBias=.012;scene.add(sun);
  function reflection(){const visible=mirrorGroup.visible;mirrorGroup.visible=false;cubeCamera.update(renderer,scene);mirrorGroup.visible=visible;}
  function lighting(mode){currentLight=mode;const s=scenarios[mode]||scenarios.day;ambient.intensity=s.ambient;sun.intensity=mode==='day'?1.1:mode==='evening'?.32:.055;emitters.forEach(e=>{const intensity=s[e.group];e.visual.material.emissiveIntensity=intensity*2;e.point.intensity=intensity*(e.group==='general'?1.9:e.group==='niche'?.45:.85);});reflection();}
- function design(key){if(key===activeDesign)return;activeDesign=key;const p=designs[key]||designs.stone;stone.color.set(p.wall);floor.color.set(p.floor);facade.color.set(p.cabinet);facade.map=key==='olive'?texture('wood'):null;facade.needsUpdate=true;vanityMaterial.color.set(key==='stone'?p.cabinet:p.wood);vanityMaterial.map=key==='stone'?null:texture('wood');vanityMaterial.needsUpdate=true;wood.color.set(p.wood);accent.color.set(p.accent);metal.color.set(p.metal);shelfMaterial.color.set(p.wall);stone.map=floor.map=texture(p.surface);eastMaterial.color.set(p.shower==='wood'?p.wood:p.shower==='tile'?p.accent:p.wall);eastMaterial.map=texture(p.shower==='wood'?'wood':p.shower==='tile'?'limestone':p.surface);tileJoints.visible=p.shower==='tile';[stone,floor,eastMaterial].forEach(m=>m.needsUpdate=true);reflection();}
+ function design(key){if(key===activeDesign)return;activeDesign=key;const p=designs[key]||designs.stone;stone.color.set(p.wall);floor.color.set(p.floor);facade.color.set(p.cabinet);facade.map=key==='olive'?texture('wood'):null;facade.needsUpdate=true;vanityMaterial.color.set(key==='stone'?p.cabinet:p.wood);vanityMaterial.map=key==='stone'?null:texture('wood');vanityMaterial.needsUpdate=true;wood.color.set(p.wood);accent.color.set(p.accent);metal.color.set(p.metal);shelfMaterial.color.set(p.wall);stone.map=floor.map=texture(p.surface);eastMaterial.color.set(p.shower==='wood'?p.wood:p.shower==='tile'?p.accent:p.wall);eastMaterial.map=texture(p.shower==='wood'?'wood':p.shower==='tile'?'limestone':p.surface);tileJoints.visible=southTileJoints.visible=p.shower==='tile';[stone,floor,eastMaterial].forEach(m=>m.needsUpdate=true);reflection();}
  function resize(){const b=container.getBoundingClientRect();renderer.setSize(b.width,b.height,false);camera.aspect=b.width/b.height;camera.updateProjectionMatrix();const w=Math.max(4.4,3.2*camera.aspect),h=w/camera.aspect;Object.assign(planCamera,{left:-w/2,right:w/2,top:h/2,bottom:-h/2});planCamera.updateProjectionMatrix();}
- function view(kind){activeView=kind;const interior=['door','shower','vanity'].includes(kind);walls.west.visible=interior;walls.south.visible=interior;walls.east.visible=kind!=='top';walls.north.visible=kind!=='top';southCut.visible=!interior;westCuts.forEach(o=>o.visible=!interior);doorGroup.visible=!interior;ceiling.visible=interior;ceilingFixtures.visible=interior;mirrorGroup.visible=interior;glassGroup.visible=true;controls.enabled=kind!=='top';controls.enableRotate=kind!=='top';const compact=container.clientWidth<600;camera.fov=43;
+ function view(kind){activeView=kind;const interior=['door','shower','vanity','wall'].includes(kind);showerWall.visible=activeArrangement==='protected'&&interior;walls.west.visible=interior;walls.south.visible=interior;walls.east.visible=kind!=='top';walls.north.visible=kind!=='top';southCut.visible=!interior;westCuts.forEach(o=>o.visible=!interior);doorGroup.visible=!interior;ceiling.visible=interior;ceilingFixtures.visible=interior;mirrorGroup.visible=interior;glassGroup.visible=true;controls.enabled=kind!=='top';controls.enableRotate=kind!=='top';const compact=container.clientWidth<600;camera.fov=43;
   if(kind==='door'){camera.position.set(.03,1.60,1.24);controls.target.set(2.02,1.40,1.13);camera.fov=84;walls.west.visible=false;}
   else if(kind==='storage'){camera.position.set(1.55,1.38,compact?2.78:2.06);controls.target.set(1.55,1.35,.35);camera.fov=compact?84:86;}
   else if(kind==='niche'){camera.position.set(2.72,1.44,1.80);controls.target.set(2.793,1.39,.24);camera.fov=75;}
-  else if(kind==='shower'){camera.position.set(1.52,1.58,2.05);controls.target.set(2.67,1.37,.69);camera.fov=74;walls.south.visible=false;}
+  else if(kind==='shower'){if(activeArrangement==='protected'){camera.position.set(1.83,1.60,.81);controls.target.set(2.42,1.35,2.07);camera.fov=80;}else{camera.position.set(1.52,1.58,2.05);controls.target.set(2.67,1.37,.69);camera.fov=74;walls.south.visible=false;}}
+  else if(kind==='wall'){camera.position.set(1.47,1.43,.72);controls.target.set(1.49,1.35,2.17);camera.fov=compact?110:94;walls.north.visible=false;}
   else if(kind==='vanity'){camera.position.set(1.03,1.56,.70);controls.target.set(.72,1.18,2.16);camera.fov=78;walls.north.visible=false;}
   else{camera.position.set(1.45,compact?9.4:6.3,compact?4.8:3.9);controls.target.set(1.30,.65,1.07);}
   camera.updateProjectionMatrix();controls.update();reflection();}
- const observer=new ResizeObserver(()=>{resize();view(activeView);});observer.observe(container);resize();design('stone');view('iso');lighting('day');
+ function arrangement(key){if(!Object.hasOwn(arrangements,key))key='protected';activeArrangement=key;const a=arrangements[key];glassGroup.position.z=a.screen.z1-.503;showerPivot.position.set(a.shower.x,0,a.shower.z);showerPivot.rotation.y=key==='protected'?-Math.PI/2:0;joinery.visible=key==='protected';view(activeView);}
+ const observer=new ResizeObserver(()=>{resize();view(activeView);});observer.observe(container);resize();design('stone');arrangement('protected');view('wall');lighting('day');
  let running=true;function animate(){if(!running)return;requestAnimationFrame(animate);controls.update();renderer.render(scene,activeView==='top'?planCamera:camera);}animate();
- return {view,design,lighting,capture(){renderer.render(scene,activeView==='top'?planCamera:camera);return renderer.domElement.toDataURL('image/png');},dispose(){running=false;observer.disconnect();controls.dispose();renderer.dispose();},get activeView(){return activeView;},get activeDesign(){return activeDesign;}};
+ return {view,design,arrangement,lighting,capture(){renderer.render(scene,activeView==='top'?planCamera:camera);return renderer.domElement.toDataURL('image/png');},dispose(){running=false;observer.disconnect();controls.dispose();renderer.dispose();},get activeView(){return activeView;},get activeDesign(){return activeDesign;},get activeArrangement(){return activeArrangement;}};
 }
